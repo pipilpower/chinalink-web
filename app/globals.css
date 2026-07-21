@@ -1,0 +1,76 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: #080B14;
+  --surface: #0D1220;
+  --border: #1A2035;
+  --primary: #00D4FF;
+  --secondary: #FF6B2B;
+  --success: #00FF94;
+  --danger: #FF3B5C;
+  --text-primary: #E2E8F0;
+  --text-secondary: #94A3B8;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  background-color: var(--bg);
+  color: var(--text-primary);
+  font-family: var(--font-syne), sans-serif;
+}
+
+@layer utilities {
+  .glow-primary {
+    box-shadow: 0 0 12px 3px rgba(0, 212, 255, 0.4);
+  }
+  .glow-success {
+    box-shadow: 0 0 12px 3px rgba(0, 255, 148, 0.4);
+  }
+  .glow-danger {
+    box-shadow: 0 0 12px 3px rgba(255, 59, 92, 0.4);
+  }
+  .glow-secondary {
+    box-shadow: 0 0 12px 3px rgba(255, 107, 43, 0.4);
+  }
+}
+
+@keyframes pulseGlow {
+  0%, 100% { box-shadow: 0 0 8px 2px rgba(0, 212, 255, 0.3); }
+  50% { box-shadow: 0 0 24px 8px rgba(0, 212, 255, 0.7); }
+}
+
+@keyframes drawPath {
+  from { stroke-dashoffset: 1000; opacity: 0; }
+  to { stroke-dashoffset: 0; opacity: 1; }
+}
+
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(40px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.animate-draw-path {
+  stroke-dasharray: 1000;
+  animation: drawPath 0.8s ease-out forwards;
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+  width: 4px;
+}
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: var(--surface);
+}
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 2px;
+}
