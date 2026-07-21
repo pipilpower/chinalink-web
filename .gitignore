@@ -6,3 +6,4 @@ out/
 .vercel/
 
 .vercel
+.env.production

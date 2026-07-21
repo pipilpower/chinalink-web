@@ -70,10 +70,14 @@ export default function URLInput({ onSubmit, isLoading }: URLInputProps) {
           type="url"
           value={url}
           onChange={(e) => setUrl(e.target.value)}
-          placeholder="https://www.alibaba.com/product/..."
+          placeholder="https://es.made-in-china.com/producto/..."
           disabled={isLoading}
           className="w-full rounded-xl border border-border bg-surface px-4 py-3 font-mono text-sm text-text-primary placeholder-muted outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-primary disabled:opacity-50"
         />
+        <p className="font-mono text-xs text-muted">
+          Chinalink extrae datos directamente de la página del proveedor.{' '}
+          Made-in-China permite este acceso — Alibaba lo bloquea.
+        </p>
       </div>
 
       <div>
