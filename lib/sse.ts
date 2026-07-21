@@ -2,7 +2,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
 
 export interface SSEEvent {
   agent: string
-  status: 'running' | 'complete' | 'partial' | 'error'
+  status: 'running' | 'complete' | 'partial' | 'error' | 'blocked'
   data?: Record<string, unknown>
   message?: string
   fields_needed?: string[]

@@ -55,6 +55,13 @@ export default function HomePage() {
         return
       }
 
+      if (event.agent === 'scraper' && event.status === 'blocked') {
+        setError(event.message ?? 'Este proveedor bloqueó el acceso automatizado.')
+        updateAgent('scraper', { status: 'blocked', message: event.message })
+        setIsLoading(false)
+        return
+      }
+
       if (event.agent === 'system' && event.status === 'error') {
         setError(event.message ?? 'Error desconocido')
         setIsLoading(false)

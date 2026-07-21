@@ -31,6 +31,7 @@ const RGB: Record<AgentStatus, readonly [number, number, number]> = {
   complete: [0,   255, 148],
   partial:  [255, 107,  43],
   error:    [255,  59,  92],
+  blocked:  [255,  59,  92],
 }
 
 const ALPHA: Record<AgentStatus, number> = {
@@ -39,6 +40,7 @@ const ALPHA: Record<AgentStatus, number> = {
   complete: 0.72,
   partial:  0.75,
   error:    0.80,
+  blocked:  0.80,
 }
 
 // ─── Internal types ──────────────────────────────────────────────────────────
@@ -131,8 +133,9 @@ function zoneCentroid(nodes: Node[], zone: number): [number, number] {
 
 // ─── State application (called on each agents prop change) ──────────────────
 
-function applyStatuses(anim: Anim, agents: Record<string, AgentState>) {
-  const next = AGENT_KEYS.map(k => (agents[k]?.status ?? 'idle') as AgentStatus)
+function applyStatuses(anim: Anim, agents: Record<string, AgentState> | undefined) {
+  const safeAgents = agents ?? {}
+  const next = AGENT_KEYS.map(k => (safeAgents[k]?.status ?? 'idle') as AgentStatus)
 
   for (let z = 0; z < N_ZONES; z++) {
     const prev = anim.statuses[z]
@@ -147,7 +150,7 @@ function applyStatuses(anim: Anim, agents: Record<string, AgentState>) {
     if (curr === 'complete') {
       anim.ripples.push({ x: cx, y: cy, r: 5, maxR: 180, rgb: RGB.complete, alpha: 0.80 })
     }
-    if (curr === 'error' || curr === 'partial') {
+    if (curr === 'error' || curr === 'partial' || curr === 'blocked') {
       anim.ripples.push({ x: cx, y: cy, r: 5, maxR: 90, rgb: RGB[curr], alpha: 0.70 })
     }
   }
@@ -155,9 +158,9 @@ function applyStatuses(anim: Anim, agents: Record<string, AgentState>) {
   // Update per-node targets
   for (const n of anim.nodes) {
     const s = next[n.zone]
-    const [tr, tg, tb] = RGB[s]
+    const [tr, tg, tb] = RGB[s] ?? RGB.idle
     n.tr = tr; n.tg = tg; n.tb = tb
-    n.tAlpha = ALPHA[s]
+    n.tAlpha = ALPHA[s] ?? ALPHA.idle
   }
 
   anim.statuses = next
@@ -304,10 +307,10 @@ function render(ctx: CanvasRenderingContext2D, anim: Anim) {
 // ─── Component ───────────────────────────────────────────────────────────────
 
 interface AgentVisualizerProps {
-  agents: Record<string, AgentState>
+  agents?: Record<string, AgentState>
 }
 
-export default function AgentVisualizer({ agents }: AgentVisualizerProps) {
+export default function AgentVisualizer({ agents = {} }: AgentVisualizerProps) {
   const canvasRef   = useRef<HTMLCanvasElement>(null)
   const animRef     = useRef<Anim | null>(null)
   const agentsRef   = useRef(agents)

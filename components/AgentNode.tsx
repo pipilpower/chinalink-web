@@ -1,7 +1,7 @@
 'use client'
 
 // Types kept here for backward compatibility with any imports
-export type AgentStatus = 'idle' | 'running' | 'complete' | 'partial' | 'error'
+export type AgentStatus = 'idle' | 'running' | 'complete' | 'partial' | 'error' | 'blocked'
 
 export interface AgentState {
   status: AgentStatus

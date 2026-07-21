@@ -24,7 +24,7 @@ interface CostData {
   costo_unitario_max: number
   dacg_aplica: boolean
   advertencias?: { tipo: string; nivel: string; mensaje: string }[]
-  precios_venta: {
+  precios_venta?: {
     margen_35: { min: number; max: number }
     margen_50: { min: number; max: number }
     margen_70: { min: number; max: number }
@@ -34,8 +34,8 @@ interface CostData {
 interface RiskData {
   nivel: 'bajo' | 'medio' | 'alto'
   score: number
-  factores: { factor: string; impacto: string; detalle: string }[]
-  recomendaciones: string[]
+  factores?: { factor: string; impacto: string; detalle: string }[]
+  recomendaciones?: string[]
 }
 
 interface PrecioTier {
@@ -46,8 +46,8 @@ interface PrecioTier {
 }
 
 interface CostBreakdownProps {
-  costs: CostData
-  risk: RiskData
+  costs?: CostData
+  risk?: RiskData
   hsCode: string
   productName: string
   quantity: number
@@ -58,8 +58,12 @@ interface CostBreakdownProps {
 const fmt = (n: number) =>
   new Intl.NumberFormat('es-SV', { style: 'currency', currency: 'USD' }).format(n)
 
-const fmtRange = (min: number, max: number) =>
-  min === max ? fmt(min) : `${fmt(min)} – ${fmt(max)}`
+const fmtRange = (min?: number, max?: number) => {
+  if (min === undefined && max === undefined) return '—'
+  const lo = min ?? max ?? 0
+  const hi = max ?? min ?? 0
+  return lo === hi ? fmt(lo) : `${fmt(lo)} – ${fmt(hi)}`
+}
 
 function Row({
   label,
@@ -99,15 +103,15 @@ const RISK_COLORS = {
 }
 
 function buildFobDetail(
-  costs: CostData,
+  costs: CostData | undefined,
   quantity: number,
   product?: Record<string, unknown>,
   freight?: Record<string, unknown>
 ): string {
-  const precioMin = costs.costo_unitario_min
-    ? costs.fob_total / quantity
+  const precioMin = costs?.costo_unitario_min
+    ? (costs?.fob_total ?? 0) / quantity
     : null
-  const precioMax = costs.fob_total_max
+  const precioMax = costs?.fob_total_max
     ? costs.fob_total_max / quantity
     : null
 
@@ -132,7 +136,6 @@ function buildFobDetail(
   // Conversión de moneda
   let monedaLabel = ''
   if (moneda && moneda !== 'USD' && tasa) {
-    const precioOrigMin = costs.fob_total / quantity / (1 / tasa)
     monedaLabel = ` · convertido de ${moneda} (1 USD = ${tasa} ${moneda})`
   }
 
@@ -156,6 +159,9 @@ export default function CostBreakdown({
   freight,
 }: CostBreakdownProps) {
   const fobDetail = buildFobDetail(costs, quantity, product, freight)
+  const advertencias = costs?.advertencias ?? []
+  const preciosVenta = costs?.precios_venta
+  const recomendaciones = risk?.recomendaciones ?? []
 
   return (
     <div className="space-y-6">
@@ -176,40 +182,40 @@ export default function CostBreakdown({
         <div className="divide-y divide-border/50">
           <Row
             label="FOB Total"
-            value={fmtRange(costs.fob_total, costs.fob_total_max ?? costs.fob_total)}
+            value={fmtRange(costs?.fob_total, costs?.fob_total_max ?? costs?.fob_total)}
             detail={fobDetail}
           />
-          <Row label="Flete Marítimo" value={fmtRange(costs.flete_min, costs.flete_max)} />
+          <Row label="Flete Marítimo" value={fmtRange(costs?.flete_min, costs?.flete_max)} />
           <Row
             label="Seguro (1.5% FOB)"
-            value={fmtRange(costs.seguro, costs.seguro_max ?? costs.seguro)}
+            value={fmtRange(costs?.seguro, costs?.seguro_max ?? costs?.seguro)}
           />
           <Row
             label="CIF (Total hasta SV)"
-            value={fmtRange(costs.cif_min, costs.cif_max)}
+            value={fmtRange(costs?.cif_min, costs?.cif_max)}
             highlight
           />
           <Row
-            label={`DAI (${(costs.dai_rate * 100).toFixed(0)}%)`}
-            value={fmtRange(costs.dai_min, costs.dai_max)}
+            label={`DAI (${((costs?.dai_rate ?? 0) * 100).toFixed(0)}%)`}
+            value={fmtRange(costs?.dai_min, costs?.dai_max)}
           />
-          <Row label="IVA (13%)" value={fmtRange(costs.iva_min, costs.iva_max)} />
-          <Row label="Gastos Locales" value={fmt(costs.gastos_locales)} />
+          <Row label="IVA (13%)" value={fmtRange(costs?.iva_min, costs?.iva_max)} />
+          <Row label="Gastos Locales" value={fmt(costs?.gastos_locales ?? 0)} />
           <Row
             label="LANDED COST TOTAL"
-            value={fmtRange(costs.landed_cost_min, costs.landed_cost_max)}
+            value={fmtRange(costs?.landed_cost_min, costs?.landed_cost_max)}
             highlight
           />
           <Row
             label="Costo Unitario"
-            value={fmtRange(costs.costo_unitario_min, costs.costo_unitario_max)}
+            value={fmtRange(costs?.costo_unitario_min, costs?.costo_unitario_max)}
           />
         </div>
       </div>
 
-      {costs.advertencias && costs.advertencias.length > 0 && (
+      {advertencias.length > 0 && (
         <div className="space-y-2">
-          {costs.advertencias.map((adv, i) => (
+          {advertencias.map((adv, i) => (
             <div
               key={i}
               className={clsx(
@@ -230,46 +236,50 @@ export default function CostBreakdown({
         </div>
       )}
 
-      <div className="rounded-xl border border-border bg-surface/50 p-4">
-        <h3 className="mb-3 font-sans text-xs font-bold uppercase tracking-widest text-text-secondary">
-          Precios de Venta Sugeridos
-        </h3>
-        <div className="space-y-2">
-          {[
-            { label: 'Margen 35%', data: costs.precios_venta.margen_35 },
-            { label: 'Margen 50%', data: costs.precios_venta.margen_50 },
-            { label: 'Margen 70%', data: costs.precios_venta.margen_70 },
-          ].map(({ label, data }) => (
-            <div key={label} className="flex justify-between">
-              <span className="font-mono text-xs text-text-secondary">{label}</span>
-              <span className="font-mono text-sm font-bold text-success">
-                {fmtRange(data.min, data.max)}
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className={clsx('rounded-xl border p-4', RISK_COLORS[risk.nivel])}>
-        <div className="flex items-center justify-between">
-          <h3 className="font-sans text-xs font-bold uppercase tracking-widest">
-            Riesgo de Importación
+      {preciosVenta && (
+        <div className="rounded-xl border border-border bg-surface/50 p-4">
+          <h3 className="mb-3 font-sans text-xs font-bold uppercase tracking-widest text-text-secondary">
+            Precios de Venta Sugeridos
           </h3>
-          <span className="font-mono text-2xl font-bold">{risk.score}/100</span>
-        </div>
-        <p className="mt-1 font-sans text-sm font-bold uppercase">{risk.nivel}</p>
-        {risk.recomendaciones.length > 0 && (
-          <ul className="mt-3 space-y-1">
-            {risk.recomendaciones.slice(0, 3).map((r, i) => (
-              <li key={i} className="font-mono text-xs opacity-80">
-                → {r}
-              </li>
+          <div className="space-y-2">
+            {[
+              { label: 'Margen 35%', data: preciosVenta.margen_35 },
+              { label: 'Margen 50%', data: preciosVenta.margen_50 },
+              { label: 'Margen 70%', data: preciosVenta.margen_70 },
+            ].map(({ label, data }) => (
+              <div key={label} className="flex justify-between">
+                <span className="font-mono text-xs text-text-secondary">{label}</span>
+                <span className="font-mono text-sm font-bold text-success">
+                  {fmtRange(data?.min, data?.max)}
+                </span>
+              </div>
             ))}
-          </ul>
-        )}
-      </div>
+          </div>
+        </div>
+      )}
 
-      {costs.dacg_aplica && (
+      {risk?.nivel && (
+        <div className={clsx('rounded-xl border p-4', RISK_COLORS[risk.nivel])}>
+          <div className="flex items-center justify-between">
+            <h3 className="font-sans text-xs font-bold uppercase tracking-widest">
+              Riesgo de Importación
+            </h3>
+            <span className="font-mono text-2xl font-bold">{risk.score ?? 0}/100</span>
+          </div>
+          <p className="mt-1 font-sans text-sm font-bold uppercase">{risk.nivel}</p>
+          {recomendaciones.length > 0 && (
+            <ul className="mt-3 space-y-1">
+              {recomendaciones.slice(0, 3).map((r, i) => (
+                <li key={i} className="font-mono text-xs opacity-80">
+                  → {r}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+
+      {costs?.dacg_aplica && (
         <div className="rounded-xl border border-secondary/50 bg-secondary/10 p-3">
           <p className="font-mono text-xs text-secondary">
             ⚠ FOB supera $5,714.28 — requiere revisión obligatoria DGA (DACG)
