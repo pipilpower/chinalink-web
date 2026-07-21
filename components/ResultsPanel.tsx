@@ -26,15 +26,40 @@ export default function ResultsPanel({ result, quantity }: ResultsPanelProps) {
   const product = result.product as any
   const hs = result.hs as any
 
+  const buildWhatsappMessage = () => {
+    const fmtRange = (min: number, max: number) =>
+      min === max ? `$${min}` : `$${min} – $${max}`
+
+    return `Hola Chinalink, me interesa importar el siguiente producto:
+
+Producto: ${product?.nombre_producto ?? ''}
+URL: ${product?.url ?? ''}
+Cantidad: ${quantity} unidades
+Costo aterrizado estimado: ${fmtRange(costs?.landed_cost_min, costs?.landed_cost_max)} USD
+Costo unitario estimado: ${fmtRange(costs?.costo_unitario_min, costs?.costo_unitario_max)} USD
+
+Mis datos:
+Nombre: ${formData.nombre}
+Email: ${formData.email}
+WhatsApp: ${formData.whatsapp}
+Empresa: ${formData.empresa}`
+  }
+
   const handleLeadSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setSubmitting(true)
     setLeadError(null)
+
+    if (!formData.nombre.trim() || !formData.email.trim()) {
+      setLeadError('Nombre y email son requeridos')
+      return
+    }
+
+    setSubmitting(true)
 
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
 
-      const response = await fetch(`${apiUrl}/leads`, {
+      await fetch(`${apiUrl}/leads`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -44,17 +69,15 @@ export default function ResultsPanel({ result, quantity }: ResultsPanelProps) {
           raw_result: result,
         }),
       })
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`)
-      }
-
-      setLeadSubmitted(true)
     } catch (err) {
-      setLeadError('Error al enviar. Intenta de nuevo.')
-    } finally {
-      setSubmitting(false)
+      // No bloquear el flujo por un fallo de Supabase — WhatsApp igual debe abrirse
     }
+
+    const mensaje = buildWhatsappMessage()
+    window.open(`https://wa.me/50378216321?text=${encodeURIComponent(mensaje)}`, '_blank')
+
+    setSubmitting(false)
+    setLeadSubmitted(true)
   }
 
   return (
@@ -102,7 +125,7 @@ export default function ResultsPanel({ result, quantity }: ResultsPanelProps) {
                   className="w-full rounded-xl bg-secondary px-6 py-4 font-sans text-sm font-bold uppercase tracking-widest text-white transition-all"
                   style={{ boxShadow: '0 0 20px rgba(255,107,43,0.4)' }}
                 >
-                  QUIERO QUE CHINALINK LO IMPORTE
+                  QUIERO IMPORTARLO CON CHINALINK
                 </motion.button>
               </motion.div>
             )}
@@ -168,7 +191,7 @@ export default function ResultsPanel({ result, quantity }: ResultsPanelProps) {
                 <div className="mb-2 text-3xl">✓</div>
                 <h3 className="font-sans font-bold text-success">¡Recibido!</h3>
                 <p className="mt-1 font-mono text-xs text-text-secondary">
-                  Te contactaremos pronto para gestionar tu importación.
+                  Te contactaremos por WhatsApp a la brevedad.
                 </p>
               </motion.div>
             )}
