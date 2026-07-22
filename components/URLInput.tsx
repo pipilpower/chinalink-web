@@ -78,6 +78,22 @@ export default function URLInput({ onSubmit, isLoading }: URLInputProps) {
           Chinalink extrae datos directamente de la página del proveedor.{' '}
           Made-in-China permite este acceso — Alibaba lo bloquea.
         </p>
+        <a
+          href="https://es.made-in-china.com"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-2 mt-2 opacity-70 hover:opacity-100 transition-opacity"
+        >
+          <img
+            src="https://image.made-in-china.com/public/static/img/mic-logo.png"
+            alt="Made-in-China"
+            className="h-4 w-auto"
+            onError={(e) => { e.currentTarget.style.display = 'none' }}
+          />
+          <span className="font-mono text-xs text-primary underline">
+            Buscar productos en Made-in-China →
+          </span>
+        </a>
       </div>
 
       <div>
