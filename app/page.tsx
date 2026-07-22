@@ -110,7 +110,7 @@ export default function HomePage() {
     runEstimate(currentUrl, quantity, { ...partialOverrides })
   }
 
-  const isActive = isLoading || result !== null || partialFields !== null
+  const isActive = isLoading || result !== null || partialFields !== null || error !== null
 
   return (
     <main className="flex min-h-screen flex-col items-center px-4 py-12">
